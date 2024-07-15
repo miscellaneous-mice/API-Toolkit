@@ -7,15 +7,13 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 class PostGreUtils:
     def __init__(self):
         with open('configs/config.yaml') as file:
-            self.config = yaml.load(file, Loader=yaml.SafeLoader)
+            config = yaml.load(file, Loader=yaml.SafeLoader)
+        self.config = config['db_creds']
         self.host = self.config['DATABASE_HOST']
         self.name = self.config['DATABASE_NAME']
         self.username = self.config['DATABASE_USERNAME']
         self.password = urllib.parse.quote_plus(self.config['DATABASE_PASSWORD'])
-        self.url = ''
-
-    async def create_connection(self):
-        self.url = f'postgresql+psycopg2://{self.host}:{self.password}@{self.host}/{self.name}'
+        self.url = f'postgresql+psycopg2://{self.username}:{self.password}@{self.host}/{self.name}'
         self.engine = create_engine(self.url)
         self.conn = self.engine.connect()
     

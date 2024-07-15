@@ -9,11 +9,13 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.middleware.gzip import GZipMiddleware
 
 from utils import RateLimitingMiddleware, RequestContextLogMiddleware, TimeoutMiddleware
-from utils import get_logger
+from utils import get_logger, CacheOps
 
 logger = get_logger(__name__)
 
 app = FastAPI(title="Netflix Search", description="My First API with FastAPI")
+
+cacheops = CacheOps(cache_dir=os.path.join(os.getcwd(), 'cache_dir'))
 
 @app.on_event("startup")
 async def startup():

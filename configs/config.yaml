@@ -1,6 +1,6 @@
 db_creds:
   DATABASE_HOST : localhost
-  DATABASE_NAME : netflix
+  DATABASE_NAME : Calculations
   DATABASE_USERNAME : postgres
   DATABASE_PASSWORD : Virtue#99@cts
   ADMIN_PASSWORD : admin

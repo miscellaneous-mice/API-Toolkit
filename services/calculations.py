@@ -10,13 +10,17 @@ import matplotlib
 import matplotlib.pyplot as plt
 import seaborn as sns
 from itertools import repeat
-from utils import cacheWrapper
+from utils import cacheWrapper, PostGreUtils
+
 
 matplotlib.use('Agg')
 sns.set_style('darkgrid')
 
 
 class Calculations:
+    def __init__(self):
+        self.connection = PostGreUtils()
+
     @cache
     def factorial(self, n):
         result = 1
@@ -86,6 +90,14 @@ class Calculations:
             # worker = partial(self.show_exp, emojis=emojis)
             executor.map(self.show_exp, repeat(emojis), data)
         time.sleep(1)
+
+    @cacheWrapper(cache)
+    async def get_data_from_postgres(self, num_of_records):
+        sql = f"""select * from data.transactions limit {num_of_records}"""
+        data = await self.connection.get_from_db(sql=sql)
+        data = data.to_dict(orient='records')
+        return data
+
 
     @staticmethod
     def rbf(x, y, x_inter, y_inter, inter):

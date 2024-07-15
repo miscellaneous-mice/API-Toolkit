@@ -4,7 +4,7 @@ import sys
 import time
 from typing import Annotated
 from starlette import status
-from fastapi import HTTPException, APIRouter, Path, Query, Depends
+from fastapi import HTTPException, APIRouter, Path, Query, Depends, Request
 from pydantic import BaseModel, Field
 from fastapi.responses import JSONResponse
 from itertools import repeat
@@ -96,3 +96,8 @@ async def heavy_compute(emoji: Emoji, chunk: int = Query(default=10, gt=0, le=50
     data = list(range(loop))
     with ProcessPoolExecutor(5) as executor:
         executor.map(cal.expressions, repeat(emojis), sp_l(data, chunk))
+
+@api.get("/getdata", status_code=status.HTTP_200_OK)
+async def heavy_compute(request: Request, num_of_records: int = Query(default=50, gt=0)):
+    data = await cal.get_data_from_postgres(num_of_records=num_of_records)
+    return data
