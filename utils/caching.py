@@ -18,6 +18,8 @@ class NumpyEncoder(json.JSONEncoder):
             return obj.tolist()
         if isinstance(obj, pd.DataFrame):
             return obj.to_dict(orient='list')
+        if isinstance(obj, pd.Timestamp):
+            return obj.strftime('%Y-%m-%d %X')
         return super().default(obj)
 
 class CacheOps:

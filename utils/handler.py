@@ -37,7 +37,7 @@ class TimeoutMiddleware(BaseHTTPMiddleware):
 class RateLimitingMiddleware(BaseHTTPMiddleware):
     # Rate limiting configurations
     RATE_LIMIT_DURATION = timedelta(seconds=10)
-    RATE_LIMIT_REQUESTS = 5
+    RATE_LIMIT_REQUESTS = 10
 
     def __init__(self, app):
         super().__init__(app)

@@ -1,1 +1,1 @@
-from .midware import app
+from .midware import app, cacheops

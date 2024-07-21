@@ -1,7 +1,9 @@
 from functools import wraps
 import os
 import sys
+import json
 import logging
+import pandas as pd
 from datetime import datetime
 
 FORMATTER = logging.Formatter(
@@ -25,7 +27,7 @@ def get_logger(logger_name):
         logger: to log the required outputs
     '''
     date = str(datetime.now().date())
-    log_folder = f'/Users/prateek/My Space/Projects/Performance/logs/{logger_name}\\'
+    log_folder = os.getcwd() + '/logs/{logger_name}\\'
     file_name = f"{log_folder}\\{logger_name}_{date}.log"
 
     if not (os.path.isdir(log_folder)):
@@ -46,13 +48,11 @@ def cacheWrapper(cache):
     def cache_func(func):
         @wraps(func)
         async def _wrapper(*args, **kwargs):
-            if not 'key' in kwargs:
+            key = ''.join(list(map(str, args))) + json.dumps(kwargs)
+            # if not key in cache.keys():
+            if not isinstance(cache.get(key), pd.DataFrame):
                 tem = await func(*args, **kwargs)
-                return tem
-            key = kwargs['key']
-            if not key in cache.keys():
-                tem = await func(*args, **kwargs)
-                cache.set(key, tem, ttl=1200, parquet=True)
+                cache.set(key, tem, ttl=20, parquet=True)
             else:
                 tem = cache.get(key)
             return tem

@@ -8,8 +8,8 @@ from starlette import status
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from jose import jwt, JWTError
 from datetime import timedelta, datetime
-from utils import get_logger
-from utils import EncryptionUtils
+from utils import get_logger, EncryptionUtils, cacheWrapper
+from MW import cacheops
 
 logger = get_logger(__name__)
 
@@ -64,6 +64,7 @@ def create_access_token(user_id: int, expires_delta: timedelta):
     return jwt.encode(encode, SECRET_KEY, algorithm=ALGORITHM) # We specify the algorithm to encode the json token and the encrypt the json token using secret key, and then pass the payload for the json token
 
 # This function is used to decode jwt and verify if user retreived from the jwt, exists in the database or not.
+@cacheWrapper(cacheops)
 async def get_current_user(token: Annotated[str, Depends(oauth2_bearer)]):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])

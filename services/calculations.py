@@ -1,5 +1,6 @@
 import os
 import sys
+import re
 from functools import cache
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 import time
@@ -11,6 +12,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from itertools import repeat
 from utils import cacheWrapper, PostGreUtils
+from MW import cacheops
 
 
 matplotlib.use('Agg')
@@ -91,13 +93,34 @@ class Calculations:
             executor.map(self.show_exp, repeat(emojis), data)
         time.sleep(1)
 
-    @cacheWrapper(cache)
-    async def get_data_from_postgres(self, num_of_records):
-        sql = f"""select * from data.transactions limit {num_of_records}"""
+    @cacheWrapper(cacheops)
+    async def get_data_from_postgres(self, columns, conditions, num_of_records):
+        columns = columns.split(',')
+        columns = [c.rstrip(' ').lstrip(' ') for c in columns]
+        columns = ', '.join([f'''"{x}"''' for x in columns])
+        base_query = f"""select {columns} from data.transactions """
+        conditions = conditions.split(',')
+        conditions = [con.rstrip(' ').lstrip(' ') for con in conditions]
+        cond_query = ''
+        if ''.join(conditions):
+            cond_query = self.formatted_cond(conditions=conditions)
+            cond_query = f"""where {' and '.join(cond_query)}"""
+        limit_query = f""" limit {num_of_records}"""
+        sql = base_query + cond_query + limit_query
         data = await self.connection.get_from_db(sql=sql)
         data = data.to_dict(orient='records')
         return data
 
+    @staticmethod
+    def formatted_cond(conditions: list) -> list:
+        queries = []
+        pattern = re.compile(r'[<>=]')
+        for c in conditions:
+            op = re.search(pattern, c).group()
+            key, value = tuple(c.split(op))
+            key = f'''"{key.rstrip(' ').lstrip(' ')}"'''
+            queries.append(key + op + value)
+        return queries
 
     @staticmethod
     def rbf(x, y, x_inter, y_inter, inter):

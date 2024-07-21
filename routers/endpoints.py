@@ -2,9 +2,10 @@
 import os
 import sys
 import time
-from typing import Annotated
+from typing import Annotated, Optional
 from starlette import status
 from fastapi import HTTPException, APIRouter, Path, Query, Depends, Request
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field
 from fastapi.responses import JSONResponse
 from itertools import repeat
@@ -15,6 +16,8 @@ from utils import sp_l, get_logger
 from services import Calculations
 
 cal = Calculations()
+
+security = HTTPBearer()
 
 user_dependency = Annotated[dict, Depends(get_current_user)]
 
@@ -37,6 +40,19 @@ class Fact(BaseModel):
                     'high' : 20100
                 }
         }
+
+class SQL(BaseModel):
+    columns : Optional[str] = Field(default='*',
+                                  description='columns: Transaction ID, Timestamp, Sender Name, Sender UPI ID, Receiver Name, Receiver UPI ID, Amount, Status')
+    filter_by : Optional[str] = Field(default='', description='column: operator (>, <, =)')
+    class Config:
+        json_schema_extra = {
+                'example' : {
+                    'columns' : 'Transaction ID, Timestamp, Sender Name, Sender UPI ID, Receiver Name, Receiver UPI ID, Amount, Status',
+                    'filter_by' : "Amount > 500, Status = 'SUCCESS'"
+                }
+        }
+
 
 class Emoji(BaseModel):
     emoji_1: str = Field(title='First emoji', description='Specify the 1st emoji', min_length=2, max_length=10)
@@ -97,7 +113,13 @@ async def heavy_compute(emoji: Emoji, chunk: int = Query(default=10, gt=0, le=50
     with ProcessPoolExecutor(5) as executor:
         executor.map(cal.expressions, repeat(emojis), sp_l(data, chunk))
 
-@api.get("/getdata", status_code=status.HTTP_200_OK)
-async def heavy_compute(request: Request, num_of_records: int = Query(default=50, gt=0)):
-    data = await cal.get_data_from_postgres(num_of_records=num_of_records)
+@api.post("/getdata", status_code=status.HTTP_200_OK)
+async def heavy_compute(sql: SQL, num_of_records: int = Query(default=10, gt=0)):
+    cols = sql.columns
+    cond = sql.filter_by
+    data = await cal.get_data_from_postgres(columns=cols, conditions=cond, num_of_records=num_of_records)
     return data
+
+@api.get("/whoami")
+def read_current_user(credentials: Annotated[HTTPAuthorizationCredentials, Depends(security)]):
+    return {"scheme": credentials.scheme, "credentials": credentials.credentials}

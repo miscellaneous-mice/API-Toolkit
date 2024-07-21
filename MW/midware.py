@@ -1,21 +1,23 @@
 import time
 import os
-import sys
-from fastapi import FastAPI, Request, status
+from typing import Annotated
+from fastapi import FastAPI, Request, status, Depends
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from fastapi.middleware.gzip import GZipMiddleware
-
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from utils import RateLimitingMiddleware, RequestContextLogMiddleware, TimeoutMiddleware
 from utils import get_logger, CacheOps
 
 logger = get_logger(__name__)
 
-app = FastAPI(title="Netflix Search", description="My First API with FastAPI")
+app = FastAPI(title="API Search", description="Mess around and find out")
 
 cacheops = CacheOps(cache_dir=os.path.join(os.getcwd(), 'cache_dir'))
+
+security = HTTPBearer()
 
 @app.on_event("startup")
 async def startup():
@@ -26,7 +28,6 @@ async def startup():
 async def shutdown():
     logger.info("shutting down the service")
 
-app.add_middleware(TimeoutMiddleware)
 
 @app.middleware("http")
 async def add_process_time_header(request: Request, call_next):
@@ -37,7 +38,13 @@ async def add_process_time_header(request: Request, call_next):
     logger.info(f"The request took {process_time} duration")
     return response
 
+# @app.middleware("http")
+# async def validate_authenticity(request: Request, call_next):
+#     credentials = Annotated[HTTPAuthorizationCredentials, Depends(security)]
+#     start_time = time.time()
 
+
+app.add_middleware(TimeoutMiddleware)
 app.add_middleware(RateLimitingMiddleware)
 app.add_middleware(RequestContextLogMiddleware)
 app.add_middleware(GZipMiddleware, minimum_size=1000)
