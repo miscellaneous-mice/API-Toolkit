@@ -137,7 +137,7 @@ class CacheOps:
             logger: to log the required outputs
         '''
         date = str(datetime.now().date())
-        log_folder = f'/Users/prateek/My Space/Projects/Performance/logs/cache_logs/{logger_name}\\'
+        log_folder = os.getcwd() + f'logs/cache_logs/{logger_name}\\'
         file_name = f"{log_folder}\\{logger_name}_{date}.log"
 
         if not (os.path.isdir(log_folder)):
